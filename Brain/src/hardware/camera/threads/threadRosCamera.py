@@ -180,6 +180,7 @@ class RosCameraThread(ThreadWithStop):
 
             serial_sender = self.serialCameraSender
             last_payload_ref = self
+            outer_self = self  # alias for inner class access
 
             class RosImageBridgeNode(Node):
                 def __init__(self, topic: str):
@@ -193,13 +194,13 @@ class RosCameraThread(ThreadWithStop):
                         now_ts = time.time()
                         # General 큐에 뭔가라도 쌓여 있으면 직전 프레임을 대체할 필요가 없으므로 드롭(항상 최신만 유지)
                         try:
-                            if self_serial.queuesList["General"].qsize() > 0:
+                            if outer_self.queuesList["General"].qsize() > 0:
                                 return
                         except Exception:
                             pass
 
                         # FPS 제한: min_frame_interval보다 빠르면 드롭
-                        if now_ts - self_serial._last_send_ts < self_serial.min_frame_interval:
+                        if now_ts - outer_self._last_send_ts < outer_self.min_frame_interval:
                             return
 
                         payload = base64.b64encode(bytes(msg.data)).decode("utf-8")
