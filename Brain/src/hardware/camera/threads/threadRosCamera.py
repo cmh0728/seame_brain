@@ -56,6 +56,7 @@ class RosCameraThread(ThreadWithStop):
         topic_name: str = "/camera/camera/color/image_raw/compressed",
         realsense_cmd: Optional[str] = None,
         keepalive_sec: float = 1.0,
+        min_frame_interval: float = 0.05, #20fps
     ):
         super(RosCameraThread, self).__init__(pause=0.01)
         self.queuesList = queuesList
@@ -63,6 +64,8 @@ class RosCameraThread(ThreadWithStop):
         self.debugging = debugging
         self.topic_name = topic_name
         self.keepalive_sec = keepalive_sec
+        # 최소 프레임 간격(초). 너무 많이 보내면 큐가 밀려 지연이 발생하므로 속도 제한.
+        self.min_frame_interval = min_frame_interval
 
         self.serialCameraSender = messageHandlerSender(self.queuesList, serialCamera)
         self.stateChangeSubscriber = messageHandlerSubscriber(
@@ -82,6 +85,7 @@ class RosCameraThread(ThreadWithStop):
 
         self._last_payload: Optional[str] = None
         self._last_emit_ts: float = 0.0
+        self._last_send_ts: float = 0.0
 
     # ================================ STATE CHANGE ====================================
     def state_change_handler(self):
@@ -186,10 +190,23 @@ class RosCameraThread(ThreadWithStop):
 
                 def listener_callback(self, msg):
                     try:
+                        now_ts = time.time()
+                        # General 큐에 뭔가라도 쌓여 있으면 직전 프레임을 대체할 필요가 없으므로 드롭(항상 최신만 유지)
+                        try:
+                            if self_serial.queuesList["General"].qsize() > 0:
+                                return
+                        except Exception:
+                            pass
+
+                        # FPS 제한: min_frame_interval보다 빠르면 드롭
+                        if now_ts - self_serial._last_send_ts < self_serial.min_frame_interval:
+                            return
+
                         payload = base64.b64encode(bytes(msg.data)).decode("utf-8")
                         serial_sender.send(payload)
                         last_payload_ref._last_payload = payload
                         last_payload_ref._last_emit_ts = time.time()
+                        last_payload_ref._last_send_ts = now_ts
                     except Exception as exc2:
                         self.get_logger().error(f"Image callback failed: {exc2}")
 
