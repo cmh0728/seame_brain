@@ -143,8 +143,8 @@ class threadGateway(ThreadWithStop):
                 latest = self.queuesList["Image"].get()
                 drained += 1
             if drained > 1:
-                # 얼마나 많이 버렸는지 눈으로 확인
-                self.logger.info(f"[Gateway] dropped {drained-1} stale serialCamera frame(s)")
+                # 얼마나 많이 버렸는지 눈으로 확인 (print로 바로 출력)
+                print(f"[Gateway] dropped {drained-1} stale serialCamera frame(s)", flush=True)
             message = latest
         if message is not None:
             self.send(message)
