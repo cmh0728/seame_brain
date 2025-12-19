@@ -138,13 +138,8 @@ class threadGateway(ThreadWithStop):
         elif "Image" in self.queuesList and not self.queuesList["Image"].empty():
             # 이미지는 최신 1개만 전송하고 나머지는 드롭해 적체 방지
             latest = None
-            drained = 0
             while not self.queuesList["Image"].empty():
                 latest = self.queuesList["Image"].get()
-                drained += 1
-            if drained > 1:
-                # 얼마나 많이 버렸는지 눈으로 확인 (print로 바로 출력)
-                print(f"[Gateway] dropped {drained-1} stale serialCamera frame(s)", flush=True)
             message = latest
         if message is not None:
             self.send(message)
