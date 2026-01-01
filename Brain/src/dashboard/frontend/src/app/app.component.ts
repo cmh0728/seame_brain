@@ -149,7 +149,7 @@ export class AppComponent implements OnDestroy {
 
   submitPassword() {
     if (this.correctPassword === '' && this.enteredPassword === this.correctPassword) {
-      this.showAlert = true;
+      this.showAlert = false; // 경고메시지 비활성화 
       this.webSocketService.sendMessageToFlask(`{"Name": "SessionAccess"}`);
       return;
     }
@@ -191,7 +191,7 @@ export class AppComponent implements OnDestroy {
 
     this.alertInterval = setInterval(() => {
       this.showAlert = true;
-    }, 900000);
+    }, 900000); // 팝업창 시간 
   }
 
   openSettings() {
